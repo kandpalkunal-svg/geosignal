@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GeoSignal — Geopolitical Market Intelligence</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeece8;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
+    --red: #D85A30; --red-bg: #FAECE7; --red-text: #993C1D;
+    --amber: #BA7517; --amber-bg: #FAEEDA; --amber-text: #854F0B;
+    --blue: #185FA5; --blue-bg: #E6F1FB; --blue-text: #0C447C;
+    --critical: #E24B4A;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  .app-header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 6px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+  .live-badge { font-size: 10px; background: var(--green-bg); color: var(--green-text); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .nav-tabs { display: flex; gap: 2px; margin-left: 20px; }
+  .tab { padding: 6px 16px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: all 0.15s; font-weight: 500; }
+  .tab:hover { background: var(--bg2); color: var(--text); }
+  .tab.active { background: var(--bg2); color: var(--text); }
+  .header-right { margin-left: auto; font-size: 11px; color: var(--text3); }
+
+  .panel { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ── MAP PANEL ── */
+  .map-layout { display: grid; grid-template-columns: 1fr 290px; gap: 16px; }
+  .map-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .map-title { padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text2); border-bottom: 0.5px solid var(--border); letter-spacing: 0.05em; text-transform: uppercase; }
+  .sidebar { display: flex; flex-direction: column; gap: 12px; }
+  .gti-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .gti-label { font-size: 11px; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .gti-value { font-size: 36px; font-weight: 700; line-height: 1; }
+  .gti-bar-track { height: 6px; background: var(--bg3); border-radius: 3px; margin: 10px 0 6px; overflow: hidden; }
+  .gti-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease, background 0.5s ease; }
+  .gti-desc { font-size: 12px; color: var(--text2); }
+  .model-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px; }
+  .model-tag { font-size: 10px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 4px; padding: 2px 7px; color: var(--text3); }
+  .signal-list { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; flex: 1; }
+  .signal-item { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .signal-item:last-child { border-bottom: none; }
+  .signal-region { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+  .signal-event { font-size: 13px; font-weight: 500; line-height: 1.4; margin-bottom: 5px; }
+  .signal-impact { font-size: 12px; }
+  .impact-bull { color: var(--green); } .impact-bear { color: var(--red); } .impact-neut { color: var(--text2); }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; margin-bottom: 5px; letter-spacing: 0.03em; }
+  .badge-high { background: var(--red-bg); color: var(--red-text); }
+  .badge-med  { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-low  { background: var(--green-bg); color: var(--green-text); }
+  .region-btn { fill-opacity: 0.75; cursor: pointer; transition: fill-opacity 0.2s; stroke: #fff; stroke-width: 1.5; }
+  .region-btn:hover { fill-opacity: 1; }
+  .region-btn.selected { stroke: #111; stroke-width: 2.5; fill-opacity: 1; }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{r:5;opacity:0.9} 50%{r:10;opacity:0.3} }
+  .pulse2 { animation: pulse 2.5s ease-in-out infinite; }
+  .pulse3 { animation: pulse 3s ease-in-out infinite; }
+
+  /* ── STOCK PANEL ── */
+  .stock-controls { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .stock-controls select { font-size: 13px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); cursor: pointer; }
+  .powered-by { margin-left: auto; font-size: 11px; color: var(--text3); }
+  .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stock-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .stock-card:hover { border-color: var(--border2); }
+  .stock-card.selected { border: 1.5px solid var(--green); }
+  .stock-ticker { font-size: 15px; font-weight: 700; }
+  .stock-name { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+  .price-row { display: flex; align-items: baseline; gap: 8px; }
+  .stock-price { font-size: 19px; font-weight: 600; }
+  .stock-chg { font-size: 12px; font-weight: 500; }
+  .chg-up { color: var(--green); } .chg-dn { color: var(--red); }
+  .signal-bar-row { margin-top: 7px; display: flex; align-items: center; gap: 6px; }
+  .sbl { font-size: 10px; color: var(--text3); width: 52px; flex-shrink: 0; }
+  .sbt { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .sbf { height: 100%; border-radius: 2px; }
+  .nlp-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; margin: 2px 2px 0 0; font-weight: 500; }
+  .tag-bull { background: var(--green-bg); color: var(--green-text); }
+  .tag-bear { background: var(--red-bg); color: var(--red-text); }
+  .tag-neut { background: var(--bg3); color: var(--text2); }
+  .detail-panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .det-ticker { font-size: 20px; font-weight: 700; }
+  .det-name { font-size: 13px; color: var(--text2); margin-left: 8px; }
+  .chart-svg { width: 100%; display: block; }
+  .detail-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .meta-card { background: var(--bg2); border-radius: 8px; padding: 10px 12px; }
+  .meta-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .meta-val { font-size: 16px; font-weight: 600; }
+
+  /* ── PROMPT PANEL ── */
+  .prompt-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .section-label { font-size: 11px; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; font-weight: 600; }
+  .pipeline-vis { background: var(--bg2); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+  .pipeline-step { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; }
+  .pipe-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .pipe-line { width: 1px; height: 12px; background: var(--border); margin-left: 4px; }
+  .pipe-label { font-size: 12px; font-weight: 600; }
+  .pipe-model { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .technique-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .technique-card { border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .technique-card:hover { border-color: var(--border2); }
+  .technique-card.active { border-color: var(--green); background: var(--green-bg); }
+  .technique-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .technique-desc { font-size: 11px; color: var(--text2); }
+  .news-select { font-size: 12px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); width: 100%; margin-bottom: 10px; cursor: pointer; }
+  .run-btn { padding: 9px 18px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--text); color: var(--bg); font-size: 13px; cursor: pointer; width: 100%; font-weight: 600; transition: opacity 0.15s; letter-spacing: 0.02em; }
+  .run-btn:hover { opacity: 0.85; }
+  .output-label { font-size: 11px; color: var(--text2); letter-spacing: 0.06em; text-transform: uppercase; margin: 14px 0 8px; font-weight: 600; }
+  .output-box { background: var(--bg2); border-radius: 8px; padding: 12px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 11px; line-height: 1.7; color: var(--text); min-height: 130px; max-height: 260px; overflow-y: auto; white-space: pre-wrap; }
+  .confidence-section { margin-top: 14px; }
+  .conf-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .conf-label { font-size: 11px; width: 110px; color: var(--text2); flex-shrink: 0; }
+  .conf-bar { flex: 1; height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .conf-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .conf-pct { font-size: 11px; color: var(--text2); min-width: 30px; text-align: right; }
+
+  @media (max-width: 700px) {
+    .map-layout { grid-template-columns: 1fr; }
+    .prompt-layout { grid-template-columns: 1fr; }
+    .detail-meta { grid-template-columns: 1fr 1fr; }
+    .stock-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <span class="logo">GeoSignal</span>
+  <span class="live-badge">● LIVE</span>
+  <nav class="nav-tabs">
+    <button class="tab active" onclick="switchTab('map',this)">🌍 Macro Map</button>
+    <button class="tab" onclick="switchTab('stocks',this)">📈 Stock Screener</button>
+    <button class="tab" onclick="switchTab('prompt',this)">🤖 NLP Pipeline</button>
+  </nav>
+  <span class="header-right">LightGBM · Transformer NLP · Prompt Engineering</span>
+</header>
+
+<!-- MAP PANEL -->
+<div id="panel-map" class="panel active">
+  <div class="map-layout">
+    <div class="map-card">
+      <div class="map-title">Global Geopolitical Tension — Click a Region</div>
+      <svg viewBox="0 0 560 320" width="100%" style="display:block;background:transparent;padding:8px">
+        <path id="r-na" class="region-btn selected" fill="#1D9E75" onclick="selectRegion('na')"
+          d="M60,60 Q90,40 140,50 Q160,60 170,80 Q180,110 160,140 Q140,160 120,170 Q90,175 70,155 Q45,130 40,100 Q38,75 60,60Z"/>
+        <path id="r-sa" class="region-btn" fill="#BA7517" onclick="selectRegion('sa')"
+          d="M120,185 Q145,175 165,185 Q180,200 175,240 Q170,275 155,290 Q135,300 115,285 Q95,265 100,230 Q102,200 120,185Z"/>
+        <path id="r-eu" class="region-btn" fill="#BA7517" onclick="selectRegion('eu')"
+          d="M240,50 Q275,40 295,55 Q310,70 305,95 Q295,115 270,120 Q248,120 232,105 Q220,88 225,68 Q230,53 240,50Z"/>
+        <path id="r-af" class="region-btn" fill="#BA7517" onclick="selectRegion('af')"
+          d="M240,135 Q272,125 290,140 Q305,158 302,195 Q298,235 278,255 Q255,268 235,255 Q215,238 215,200 Q212,165 227,145 Q232,137 240,135Z"/>
+        <path id="r-me" class="region-btn" fill="#E24B4A" onclick="selectRegion('me')"
+          d="M290,110 Q318,100 335,112 Q348,125 345,148 Q338,165 318,168 Q298,168 285,152 Q275,136 280,118Z"/>
+        <path id="r-as" class="region-btn" fill="#D85A30" onclick="selectRegion('as')"
+          d="M340,50 Q400,35 450,48 Q490,60 500,90 Q505,120 485,145 Q460,165 420,168 Q380,168 355,148 Q330,125 330,90 Q332,65 340,50Z"/>
+        <path id="r-oc" class="region-btn" fill="#1D9E75" onclick="selectRegion('oc')"
+          d="M430,185 Q465,175 485,190 Q500,205 495,230 Q488,250 465,255 Q442,255 428,238 Q416,220 420,200Z"/>
+        <!-- Labels -->
+        <text x="108" y="118" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">N. America</text>
+        <text x="142" y="240" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">S. America</text>
+        <text x="268" y="85"  text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Europe</text>
+        <text x="258" y="200" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Africa</text>
+        <text x="314" y="138" text-anchor="middle" fill="white" font-size="9"  font-weight="700" pointer-events="none">Mid East</text>
+        <text x="415" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Asia</text>
+        <text x="460" y="218" text-anchor="middle" fill="white" font-size="9"  font-weight="700" pointer-events="none">Oceania</text>
+        <!-- Pulse dots for hotspots -->
+        <circle cx="314" cy="130" r="5" fill="#E24B4A" class="pulse"/>
+        <circle cx="415" cy="100" r="5" fill="#D85A30" class="pulse2"/>
+        <circle cx="268" cy="82"  r="4" fill="#BA7517" class="pulse3"/>
+      </svg>
+    </div>
+    <div class="sidebar">
+      <div class="gti-card">
+        <div class="gti-label">Geopolitical Tension Index</div>
+        <div class="gti-value" id="gti-num">42</div>
+        <div class="gti-bar-track"><div class="gti-bar-fill" id="gti-fill" style="width:42%;background:#1D9E75"></div></div>
+        <div class="gti-desc" id="gti-desc">Low · Stable macro environment</div>
+        <div class="model-tags">
+          <span class="model-tag">LightGBM v2.1</span>
+          <span class="model-tag">Transformer NLP</span>
+          <span class="model-tag">Clustering</span>
+        </div>
+      </div>
+      <div class="signal-list" id="signal-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STOCKS PANEL -->
+<div id="panel-stocks" class="panel">
+  <div class="stock-controls">
+    <select id="sector-filter" onchange="filterStocks()">
+      <option value="all">All Sectors</option>
+      <option value="energy">Energy</option>
+      <option value="tech">Technology</option>
+      <option value="defence">Defence</option>
+      <option value="fmcg">FMCG</option>
+    </select>
+    <select id="signal-filter" onchange="filterStocks()">
+      <option value="all">All Signals</option>
+      <option value="bull">Bullish</option>
+      <option value="bear">Bearish</option>
+    </select>
+    <span class="powered-by">Powered by LightGBM · NLP Sentiment Pipeline</span>
+  </div>
+  <div class="stock-grid" id="stock-grid"></div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <div>
+        <span class="det-ticker" id="det-ticker">RELIANCE</span>
+        <span class="det-name" id="det-name">Reliance Industries</span>
+      </div>
+      <div id="det-tags"></div>
+    </div>
+    <svg class="chart-svg" viewBox="0 0 520 120" id="det-chart" style="border-radius:8px;background:var(--bg2)"></svg>
+    <div class="detail-meta" id="det-meta"></div>
+  </div>
+</div>
+
+<!-- PROMPT PANEL -->
+<div id="panel-prompt" class="panel">
+  <div class="prompt-layout">
+    <div class="prompt-card">
+      <div class="section-label">NLP Pipeline Architecture</div>
+      <div class="pipeline-vis">
+        <div class="pipeline-step"><div class="pipe-dot" style="background:#1D9E75"></div><div><div class="pipe-label">Step 1 · Event Extraction</div><div class="pipe-model">Role prompt · Zero-shot · Entity tagging</div></div></div>
+        <div class="pipe-line"></div>
+        <div class="pipeline-step"><div class="pipe-dot" style="background:#BA7517"></div><div><div class="pipe-label">Step 2 · Sentiment Scoring</div><div class="pipe-model">Few-shot examples · Scale: –1 (bearish) → +1 (bullish)</div></div></div>
+        <div class="pipe-line"></div>
+        <div class="pipeline-step"><div class="pipe-dot" style="background:#D85A30"></div><div><div class="pipe-label">Step 3 · Risk Classification</div><div class="pipe-model">Chain-of-thought · LightGBM feature input</div></div></div>
+        <div class="pipe-line"></div>
+        <div class="pipeline-step"><div class="pipe-dot" style="background:#185FA5"></div><div><div class="pipe-label">Step 4 · Market Impact</div><div class="pipe-model">Structured JSON output → LightGBM features</div></div></div>
+      </div>
+      <div class="section-label">Prompt Engineering Techniques</div>
+      <div class="technique-grid" id="technique-grid">
+        <div class="technique-card active" onclick="selectTechnique(this,'zero')"><div class="technique-title">Zero-shot</div><div class="technique-desc">Direct instruction, no examples</div></div>
+        <div class="technique-card" onclick="selectTechnique(this,'few')"><div class="technique-title">Few-shot</div><div class="technique-desc">3–5 labeled examples in context</div></div>
+        <div class="technique-card" onclick="selectTechnique(this,'cot')"><div class="technique-title">Chain-of-Thought</div><div class="technique-desc">"Think step by step" reasoning</div></div>
+        <div class="technique-card" onclick="selectTechnique(this,'struct')"><div class="technique-title">Structured Output</div><div class="technique-desc">JSON schema enforcement</div></div>
+      </div>
+    </div>
+    <div class="prompt-card">
+      <div class="section-label">Live Prompt Simulation</div>
+      <select class="news-select" id="news-select">
+        <option value="0">📰 Fed signals rate hold amid Middle East tensions</option>
+        <option value="1">📰 India-China border talks show renewed progress</option>
+        <option value="2">📰 European energy prices surge on supply disruptions</option>
+        <option value="3">📰 US tech sector faces new export control restrictions</option>
+      </select>
+      <button class="run-btn" onclick="runPipeline()">▶ Run NLP Pipeline</button>
+      <div class="output-label" id="output-label">Select a headline and click Run</div>
+      <div class="output-box" id="pipeline-output"></div>
+      <div class="confidence-section" id="conf-section" style="display:none">
+        <div class="section-label">Model Confidence</div>
+        <div id="conf-bars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const REGIONS = {
+  na: { name:'North America', gti:42, color:'#1D9E75', desc:'Low · Stable macro environment', events:[
+    {badge:'low',region:'USA',event:'Fed holds rates; signals cautious easing path',impact:'bull',impactText:'↑ Bullish: Rate-sensitive sectors rally'},
+    {badge:'low',region:'Canada',event:'Trade surplus widens on energy exports',impact:'bull',impactText:'↑ Bullish: CAD strengthens'}]},
+  eu: { name:'Europe', gti:58, color:'#BA7517', desc:'Moderate · Inflation and energy uncertainty', events:[
+    {badge:'med',region:'Germany',event:'Industrial output contracts 3rd consecutive month',impact:'bear',impactText:'↓ Bearish: EUR under pressure, cyclicals at risk'},
+    {badge:'med',region:'UK',event:'Energy import disruptions raise inflation forecast',impact:'bear',impactText:'↓ Bearish: Consumer staples under pressure'}]},
+  me: { name:'Middle East', gti:82, color:'#E24B4A', desc:'Critical · Active conflict risk', events:[
+    {badge:'high',region:'Red Sea',event:'Shipping disruptions extend supply chain delays 6–8 weeks',impact:'bear',impactText:'↓ Bearish: Freight costs up 40%, logistics stocks hit'},
+    {badge:'high',region:'Gulf',event:'Oil supply uncertainty triggers OPEC+ emergency talks',impact:'bear',impactText:'↓ Bearish: Crude +8%, energy bullish, airlines bearish'}]},
+  as: { name:'Asia', gti:65, color:'#D85A30', desc:'Elevated · Geopolitical & trade stress', events:[
+    {badge:'high',region:'China',event:'Export control retaliations escalate tech decoupling',impact:'bear',impactText:'↓ Bearish: Semiconductor supply chains at risk'},
+    {badge:'med',region:'India',event:'Strong Q3 GDP; FII inflows accelerate',impact:'bull',impactText:'↑ Bullish: Nifty50 targets new highs, financials lead'}]},
+  sa: { name:'South America', gti:51, color:'#BA7517', desc:'Moderate · Commodity volatility', events:[
+    {badge:'med',region:'Brazil',event:'Commodity export boom supports BRL stability',impact:'bull',impactText:'↑ Bullish: Agricultural commodities, agri-stocks up'}]},
+  af: { name:'Africa', gti:55, color:'#BA7517', desc:'Moderate · Infrastructure & FDI focus', events:[
+    {badge:'med',region:'Sub-Saharan',event:'FDI inflows rise on infrastructure buildout plans',impact:'neut',impactText:'→ Neutral: Long-term positive, near-term FX risk'}]},
+  oc: { name:'Oceania', gti:28, color:'#1D9E75', desc:'Low · Stable outlook', events:[
+    {badge:'low',region:'Australia',event:'Iron ore demand from India offsets China slowdown',impact:'bull',impactText:'↑ Bullish: Mining sector outperforms'}]}
+};
+
+// Base stock config — prices/chg overwritten by live fetch
+const STOCKS = [
+  {ticker:'RELIANCE',  yf:'RELIANCE.NS',   name:'Reliance Industries',   sector:'energy',  price:null,chg:null,signal:'bull',momentum:72,sentiment:68,risk:35},
+  {ticker:'TCS',       yf:'TCS.NS',        name:'Tata Consultancy Svcs', sector:'tech',    price:null,chg:null,signal:'bear',momentum:42,sentiment:38,risk:55},
+  {ticker:'HAL',       yf:'HAL.NS',        name:'Hindustan Aeronautics', sector:'defence', price:null,chg:null,signal:'bull',momentum:88,sentiment:82,risk:22},
+  {ticker:'ITC',       yf:'ITC.NS',        name:'ITC Limited',           sector:'fmcg',    price:null,chg:null,signal:'bull',momentum:61,sentiment:65,risk:30},
+  {ticker:'ONGC',      yf:'ONGC.NS',       name:'Oil & Natural Gas Corp',sector:'energy',  price:null,chg:null,signal:'bull',momentum:79,sentiment:74,risk:28},
+  {ticker:'INFY',      yf:'INFY.NS',       name:'Infosys',               sector:'tech',    price:null,chg:null,signal:'bear',momentum:36,sentiment:32,risk:60},
+  {ticker:'BEL',       yf:'BEL.NS',        name:'Bharat Electronics',    sector:'defence', price:null,chg:null,signal:'bull',momentum:83,sentiment:79,risk:25},
+  {ticker:'HUL',       yf:'HINDUNILVR.NS', name:'Hindustan Unilever',    sector:'fmcg',    price:null,chg:null,signal:'neut',momentum:52,sentiment:55,risk:42},
+  {ticker:'MARUTI',    yf:'MARUTI.NS',     name:'Maruti Suzuki',         sector:'fmcg',    price:null,chg:null,signal:'bull',momentum:66,sentiment:62,risk:38},
+  {ticker:'HDFCBANK',  yf:'HDFCBANK.NS',   name:'HDFC Bank',             sector:'tech',    price:null,chg:null,signal:'bull',momentum:58,sentiment:61,risk:33},
+  {ticker:'BAJFINANCE',yf:'BAJFINANCE.NS', name:'Bajaj Finance',         sector:'tech',    price:null,chg:null,signal:'neut',momentum:51,sentiment:49,risk:47},
+  {ticker:'NESTLEIND', yf:'NESTLEIND.NS',  name:'Nestle India',          sector:'fmcg',    price:null,chg:null,signal:'bull',momentum:63,sentiment:67,risk:29},
+];
+
+const FALLBACK = {
+  RELIANCE:2847,TCS:3941,HAL:4210,ITC:438,ONGC:267,
+  INFY:1524,BEL:298,HUL:2341,MARUTI:11200,HDFCBANK:1680,
+  BAJFINANCE:7100,NESTLEIND:2250
+};
+
+async function fetchLivePrices() {
+  const status = document.getElementById('price-status');
+  if(status) status.textContent = 'Fetching live prices…';
+  const symbols = STOCKS.map(s=>s.yf).join(',');
+  const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+symbols+'&fields=regularMarketPrice,regularMarketChangePercent';
+  const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(url);
+  try {
+    const res = await fetch(proxy, {signal:AbortSignal.timeout(8000)});
+    const outer = await res.json();
+    const data = JSON.parse(outer.contents);
+    const quotes = data?.quoteResponse?.result || [];
+    quotes.forEach(q => {
+      const stock = STOCKS.find(s=>s.yf===q.symbol);
+      if(!stock) return;
+      stock.price = Math.round(q.regularMarketPrice);
+      stock.chg   = Math.round(q.regularMarketChangePercent*10)/10;
+      if(stock.chg>1.5||(stock.chg>0&&stock.momentum>65)) stock.signal='bull';
+      else if(stock.chg<-1||(stock.chg<0&&stock.momentum<45)) stock.signal='bear';
+      else stock.signal='neut';
+    });
+    if(status){status.textContent='● Live · '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});status.style.color='#1D9E75';}
+  } catch(e) {
+    STOCKS.forEach(s=>{
+      if(s.price===null){s.price=FALLBACK[s.ticker]||1000;s.chg=parseFloat(((Math.random()-0.48)*3).toFixed(1));}
+    });
+    if(status){status.textContent='● Cached prices';status.style.color='#BA7517';}
+  }
+  filterStocks();
+  selectStock(selectedStock);
+}
+
+const NLP_OUTPUTS = [
+  {headline:'Fed signals rate hold amid Middle East tensions',
+   steps:['EVENT EXTRACT\n  Type: Monetary Policy + Geopolitical\n  Entities: [Federal Reserve, Middle East]\n  Category: macro_uncertainty',
+          'SENTIMENT\n  Score: –0.32 (mildly bearish)\n  Geostress component: +0.45\n  Monetary component: –0.77',
+          'RISK CLASS\n  Volatility spike probability: 67%\n  Bias: BEARISH | Confidence: 0.81\n  CoT: "Rate hold + conflict uncertainty → risk-off"',
+          'MARKET IMPACT\n  {"sectors_bear":["financials","real_estate"],\n   "sectors_bull":["gold","defence"],\n   "fx_impact":"USD_STRENGTHEN",\n   "vix_delta":"+12%"}'],
+   conf:[['Bearish signal',81],['Vol spike',67],['Risk-off regime',74]]},
+  {headline:'India-China border talks show renewed progress',
+   steps:['EVENT EXTRACT\n  Type: Diplomatic Development\n  Entities: [India, China, LAC Border]\n  Category: geopolitical_deescalation',
+          'SENTIMENT\n  Score: +0.61 (bullish)\n  Geostress component: –0.55\n  Diplomatic momentum: +0.72',
+          'RISK CLASS\n  Volatility spike probability: 24%\n  Bias: BULLISH | Confidence: 0.76\n  CoT: "Reduced border tension → FII re-entry signal"',
+          'MARKET IMPACT\n  {"sectors_bull":["IT","banking","infra"],\n   "fx_impact":"INR_STRENGTHEN",\n   "nifty_bias":"POSITIVE_0.8_TO_1.2pct"}'],
+   conf:[['Bullish signal',76],['Vol spike',24],['Risk-on regime',68]]},
+  {headline:'European energy prices surge on supply disruptions',
+   steps:['EVENT EXTRACT\n  Type: Commodity Shock\n  Entities: [Europe, Natural Gas, Pipeline]\n  Category: supply_disruption',
+          'SENTIMENT\n  Score: –0.71 (strongly bearish)\n  Geostress component: +0.68\n  Commodity shock: –0.85',
+          'RISK CLASS\n  Volatility spike probability: 78%\n  Bias: BEARISH | Confidence: 0.88\n  CoT: "Energy shock → stagflation risk, ECB constrained"',
+          'MARKET IMPACT\n  {"sectors_bear":["industrials","consumer_disc"],\n   "sectors_bull":["energy","utilities"],\n   "fx_impact":"EUR_WEAKEN",\n   "inflation_signal":"HIGH"}'],
+   conf:[['Bearish signal',88],['Vol spike',78],['Stagflation risk',71]]},
+  {headline:'US tech sector faces new export control restrictions',
+   steps:['EVENT EXTRACT\n  Type: Regulatory / Trade Policy\n  Entities: [US Commerce Dept, Semiconductors, China]\n  Category: trade_restriction',
+          'SENTIMENT\n  Score: –0.58 (bearish)\n  Policy risk: +0.71\n  Supply chain disruption: –0.63',
+          'RISK CLASS\n  Volatility spike probability: 71%\n  Bias: BEARISH | Confidence: 0.84\n  CoT: "Export curbs → semi supply crunch, retaliation risk"',
+          'MARKET IMPACT\n  {"sectors_bear":["semiconductors","hardware"],\n   "sectors_bull":["domestic_defence","CDMO"],\n   "vix_delta":"+9%",\n   "supply_chain_score":"HIGH_RISK"}'],
+   conf:[['Bearish signal',84],['Vol spike',71],['Supply chain risk',79]]}
+];
+
+const TECHNIQUE_PROMPTS = {
+  zero:'TECHNIQUE: Zero-shot\n\nPrompt sent to model:\n"You are a geopolitical risk analyst. Extract events,\nclassify sentiment, and output market impact from\nthe following news headline. Be concise and precise."\n\n',
+  few: 'TECHNIQUE: Few-shot (3 examples)\n\nExample 1: [Oil embargo declared] → bearish, energy +12%\nExample 2: [Peace accord signed] → bullish, risk-on\nExample 3: [Central bank rate cut] → bullish, bonds rally\n\nNow classifying new input with above context...\n\n',
+  cot: 'TECHNIQUE: Chain-of-Thought\n\nPrompt: "Let\'s think step by step:\n  1. What type of geopolitical event is this?\n  2. Which asset classes are most exposed?\n  3. What is the primary directional bias?\n  4. What is our confidence level and why?"\n\n',
+  struct:'TECHNIQUE: Structured Output\n\nEnforcing JSON schema:\n{\n  "event_type": string,\n  "sentiment_score": float [-1.0 to 1.0],\n  "market_bias": "bull" | "bear" | "neutral",\n  "affected_sectors": string[],\n  "confidence": float,\n  "vix_impact": string\n}\n\n'
+};
+
+let currentTechnique = 'zero';
+let selectedStock = 'RELIANCE';
+let pipelineRunning = false;
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function selectRegion(r) {
+  document.querySelectorAll('.region-btn').forEach(el => el.classList.remove('selected'));
+  document.getElementById('r-' + r).classList.add('selected');
+  const reg = REGIONS[r];
+  document.getElementById('gti-num').textContent = reg.gti;
+  const fill = document.getElementById('gti-fill');
+  fill.style.width = reg.gti + '%';
+  fill.style.background = reg.color;
+  document.getElementById('gti-desc').textContent = reg.desc;
+  document.getElementById('signal-list').innerHTML = reg.events.map(e => `
+    <div class="signal-item">
+      <span class="badge badge-${e.badge}">${e.badge.toUpperCase()} RISK</span>
+      <div class="signal-region">${e.region}</div>
+      <div class="signal-event">${e.event}</div>
+      <div class="signal-impact impact-${e.impact}">${e.impactText}</div>
+    </div>`).join('');
+}
+
+function filterStocks() {
+  const sec = document.getElementById('sector-filter').value;
+  const sig = document.getElementById('signal-filter').value;
+  const filtered = STOCKS.filter(s =>
+    (sec === 'all' || s.sector === sec) &&
+    (sig === 'all' || s.signal === sig)
+  );
+  renderStocks(filtered);
+}
+
+function renderStocks(stocks) {
+  document.getElementById('stock-grid').innerHTML = stocks.map(s => `
+    <div class="stock-card ${s.ticker === selectedStock ? 'selected' : ''}" onclick="selectStock('${s.ticker}')">
+      <div class="stock-ticker">${s.ticker}</div>
+      <div class="stock-name">${s.name}</div>
+      <div class="price-row">
+        <div class="stock-price">₹${s.price.toLocaleString('en-IN')}</div>
+        <div class="stock-chg ${s.chg >= 0 ? 'chg-up':'chg-dn'}">${s.chg >= 0 ? '+':''}${s.chg}%</div>
+      </div>
+      <div class="signal-bar-row"><span class="sbl">Momentum</span><div class="sbt"><div class="sbf" style="width:${s.momentum}%;background:#1D9E75"></div></div></div>
+      <div class="signal-bar-row"><span class="sbl">Sentiment</span><div class="sbt"><div class="sbf" style="width:${s.sentiment}%;background:#185FA5"></div></div></div>
+      <div style="margin-top:7px">
+        <span class="nlp-tag ${s.signal==='bull'?'tag-bull':s.signal==='bear'?'tag-bear':'tag-neut'}">${s.signal==='bull'?'↑ Bullish':s.signal==='bear'?'↓ Bearish':'→ Neutral'}</span>
+      </div>
+    </div>`).join('');
+}
+
+function selectStock(ticker) {
+  selectedStock = ticker;
+  const s = STOCKS.find(x => x.ticker === ticker);
+  filterStocks();
+  document.getElementById('det-ticker').textContent = s.ticker;
+  document.getElementById('det-name').textContent = s.name;
+  document.getElementById('det-tags').innerHTML =
+    `<span class="nlp-tag ${s.signal==='bull'?'tag-bull':s.signal==='bear'?'tag-bear':'tag-neut'}">${s.signal==='bull'?'↑ Bullish':s.signal==='bear'?'↓ Bearish':'→ Neutral'}</span>
+     <span class="nlp-tag tag-neut" style="margin-left:4px">Geo-correlated</span>`;
+  renderMiniChart(s);
+  document.getElementById('det-meta').innerHTML = `
+    <div class="meta-card"><div class="meta-label">Geo Momentum</div><div class="meta-val">${s.momentum}/100</div></div>
+    <div class="meta-card"><div class="meta-label">NLP Sentiment</div><div class="meta-val">${s.sentiment}/100</div></div>
+    <div class="meta-card"><div class="meta-label">Risk Score</div><div class="meta-val" style="color:${s.risk>55?'#D85A30':'#1D9E75'}">${s.risk}/100</div></div>
+    <div class="meta-card"><div class="meta-label">1D Change</div><div class="meta-val ${s.chg>=0?'chg-up':'chg-dn'}">${s.chg>=0?'+':''}${s.chg}%</div></div>`;
+}
+
+function renderMiniChart(s) {
+  const pts = [100];
+  const seed = s.ticker.charCodeAt(0);
+  for (let i = 1; i < 30; i++) {
+    const trend = s.signal === 'bull' ? 0.3 : s.signal === 'bear' ? -0.3 : 0;
+    const r = Math.sin(seed * i * 127.1) * 0.5 + 0.5;
+    pts.push(pts[pts.length-1] + (r - 0.5 + trend) * 2.5);
+  }
+  const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
+  const W = 520, H = 110, pad = 10;
+  const x = i => pad + (i / (pts.length-1)) * (W - 2*pad);
+  const y = v => H - pad - ((v-min)/range) * (H - 2*pad);
+  const d = pts.map((v,i) => (i?'L':'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+  const area = d + ' L' + x(pts.length-1).toFixed(1) + ',' + H + ' L' + x(0).toFixed(1) + ',' + H + ' Z';
+  const col = s.chg >= 0 ? '#1D9E75' : '#D85A30';
+  document.getElementById('det-chart').innerHTML =
+    `<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity="0.25"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+     <path d="${area}" fill="url(#cg)"/>
+     <path d="${d}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>`;
+}
+
+function runPipeline() {
+  if (pipelineRunning) return;
+  pipelineRunning = true;
+  const idx = parseInt(document.getElementById('news-select').value);
+  const nlp = NLP_OUTPUTS[idx];
+  const out = document.getElementById('pipeline-output');
+  const lbl = document.getElementById('output-label');
+  const confSec = document.getElementById('conf-section');
+  lbl.textContent = 'Running pipeline…';
+  out.textContent = '';
+  confSec.style.display = 'none';
+  let full = TECHNIQUE_PROMPTS[currentTechnique];
+  full += '─── NEWS INPUT ───\n"' + nlp.headline + '"\n';
+  nlp.steps.forEach((s,i) => { full += '\n──── STEP ' + (i+1) + ' ────\n' + s + '\n'; });
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i >= full.length) {
+      clearInterval(iv);
+      lbl.textContent = 'Pipeline complete ✓';
+      confSec.style.display = 'block';
+      document.getElementById('conf-bars').innerHTML = nlp.conf.map(([label, pct]) =>
+        `<div class="conf-row">
+          <span class="conf-label">${label}</span>
+          <div class="conf-bar"><div class="conf-fill" style="width:${pct}%;background:${pct>70?'#1D9E75':'#BA7517'}"></div></div>
+          <span class="conf-pct">${pct}%</span>
+        </div>`).join('');
+      pipelineRunning = false;
+      return;
+    }
+    out.textContent += full[i++];
+    out.scrollTop = out.scrollHeight;
+  }, 10);
+}
+
+function selectTechnique(el, key) {
+  currentTechnique = key;
+  document.querySelectorAll('.technique-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Init
+selectRegion('na');
+fetchLivePrices();
+setInterval(fetchLivePrices, 60000);
+</script>
+</body>
+</html>
