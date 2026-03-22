@@ -149,34 +149,195 @@
   <div class="map-layout">
     <div class="map-card">
       <div class="map-title">Global Geopolitical Tension — Click a Region</div>
-      <svg viewBox="0 0 560 320" width="100%" style="display:block;background:transparent;padding:8px">
-        <path id="r-na" class="region-btn selected" fill="#1D9E75" onclick="selectRegion('na')"
-          d="M60,60 Q90,40 140,50 Q160,60 170,80 Q180,110 160,140 Q140,160 120,170 Q90,175 70,155 Q45,130 40,100 Q38,75 60,60Z"/>
-        <path id="r-sa" class="region-btn" fill="#BA7517" onclick="selectRegion('sa')"
-          d="M120,185 Q145,175 165,185 Q180,200 175,240 Q170,275 155,290 Q135,300 115,285 Q95,265 100,230 Q102,200 120,185Z"/>
-        <path id="r-eu" class="region-btn" fill="#BA7517" onclick="selectRegion('eu')"
-          d="M240,50 Q275,40 295,55 Q310,70 305,95 Q295,115 270,120 Q248,120 232,105 Q220,88 225,68 Q230,53 240,50Z"/>
-        <path id="r-af" class="region-btn" fill="#BA7517" onclick="selectRegion('af')"
-          d="M240,135 Q272,125 290,140 Q305,158 302,195 Q298,235 278,255 Q255,268 235,255 Q215,238 215,200 Q212,165 227,145 Q232,137 240,135Z"/>
-        <path id="r-me" class="region-btn" fill="#E24B4A" onclick="selectRegion('me')"
-          d="M290,110 Q318,100 335,112 Q348,125 345,148 Q338,165 318,168 Q298,168 285,152 Q275,136 280,118Z"/>
-        <path id="r-as" class="region-btn" fill="#D85A30" onclick="selectRegion('as')"
-          d="M340,50 Q400,35 450,48 Q490,60 500,90 Q505,120 485,145 Q460,165 420,168 Q380,168 355,148 Q330,125 330,90 Q332,65 340,50Z"/>
-        <path id="r-oc" class="region-btn" fill="#1D9E75" onclick="selectRegion('oc')"
-          d="M430,185 Q465,175 485,190 Q500,205 495,230 Q488,250 465,255 Q442,255 428,238 Q416,220 420,200Z"/>
-        <!-- Labels -->
-        <text x="108" y="118" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">N. America</text>
-        <text x="142" y="240" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">S. America</text>
-        <text x="268" y="85"  text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Europe</text>
-        <text x="258" y="200" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Africa</text>
-        <text x="314" y="138" text-anchor="middle" fill="white" font-size="9"  font-weight="700" pointer-events="none">Mid East</text>
-        <text x="415" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="700" pointer-events="none">Asia</text>
-        <text x="460" y="218" text-anchor="middle" fill="white" font-size="9"  font-weight="700" pointer-events="none">Oceania</text>
-        <!-- Pulse dots for hotspots -->
-        <circle cx="314" cy="130" r="5" fill="#E24B4A" class="pulse"/>
-        <circle cx="415" cy="100" r="5" fill="#D85A30" class="pulse2"/>
-        <circle cx="268" cy="82"  r="4" fill="#BA7517" class="pulse3"/>
-      </svg>
+      <svg id="world-map" viewBox="0 0 960 500" width="100%" style="display:block;background:#EBF4FB;border-radius:0 0 10px 10px">
+  <style>
+    .country { stroke:#fff; stroke-width:0.4; cursor:default; }
+    .continent-label { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:11px; font-weight:700; fill:rgba(0,0,0,0.55); pointer-events:none; }
+    .hotspot { pointer-events:none; }
+    .hotspot circle { animation: hpulse 2s ease-in-out infinite; }
+    @keyframes hpulse { 0%,100%{r:5;opacity:0.9} 50%{r:10;opacity:0.25} }
+  </style>
+  <defs>
+    <filter id="ocean-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="rgba(0,80,150,0.08)"/>
+    </filter>
+  </defs>
+
+  <!-- Ocean background -->
+  <rect width="960" height="500" fill="#D4E9F7"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       NORTH AMERICA  (click target + countries)
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-na" class="region-btn" onclick="selectRegion('na')" fill="#1D9E75">
+    <!-- Canada -->
+    <path class="country" d="M120,40 L200,35 L240,45 L260,60 L250,75 L220,80 L210,95 L190,90 L175,100 L160,95 L140,105 L125,95 L110,80 L100,65 L105,50Z"/>
+    <!-- Alaska -->
+    <path class="country" d="M55,45 L90,40 L105,50 L100,65 L85,70 L70,65 L55,70 L45,60Z"/>
+    <!-- USA -->
+    <path class="country" d="M110,105 L210,100 L250,105 L265,120 L260,140 L240,150 L210,155 L180,158 L150,155 L125,148 L108,135 L105,118Z"/>
+    <!-- Mexico -->
+    <path class="country" d="M125,158 L210,155 L225,165 L220,182 L205,192 L185,190 L165,182 L148,172 L132,168Z"/>
+    <!-- Central America blob -->
+    <path class="country" d="M185,192 L210,188 L218,200 L208,210 L192,205Z"/>
+    <!-- Greenland -->
+    <path class="country" d="M245,15 L285,12 L295,25 L288,38 L265,42 L248,35Z"/>
+    <!-- Caribbean islands small -->
+    <circle class="country" cx="230" cy="168" r="4"/>
+    <circle class="country" cx="242" cy="165" r="3"/>
+    <circle class="country" cx="252" cy="163" r="3"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SOUTH AMERICA
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-sa" class="region-btn" onclick="selectRegion('sa')" fill="#BA7517">
+    <!-- Colombia/Venezuela -->
+    <path class="country" d="M195,215 L240,210 L262,220 L265,235 L250,242 L228,240 L205,232Z"/>
+    <!-- Brazil -->
+    <path class="country" d="M228,240 L290,235 L315,248 L320,270 L310,295 L290,315 L265,322 L240,315 L220,298 L210,275 L215,255Z"/>
+    <!-- Peru/Bolivia -->
+    <path class="country" d="M195,245 L225,242 L215,275 L200,285 L185,275 L180,258 L188,248Z"/>
+    <!-- Chile -->
+    <path class="country" d="M198,285 L212,278 L215,310 L210,338 L200,350 L190,338 L192,315Z"/>
+    <!-- Argentina -->
+    <path class="country" d="M200,305 L240,315 L250,338 L242,362 L225,372 L208,360 L200,340Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       EUROPE
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-eu" class="region-btn" onclick="selectRegion('eu')" fill="#BA7517">
+    <!-- Scandinavia -->
+    <path class="country" d="M430,40 L455,35 L468,50 L462,70 L448,78 L435,72 L425,58Z"/>
+    <!-- UK + Ireland -->
+    <path class="country" d="M392,68 L402,62 L410,70 L405,82 L395,84 L388,76Z"/>
+    <path class="country" d="M382,70 L390,66 L392,75 L384,78Z"/>
+    <!-- France/Spain/Portugal -->
+    <path class="country" d="M400,88 L440,82 L452,95 L448,112 L428,118 L405,115 L396,102Z"/>
+    <!-- Iberian peninsula -->
+    <path class="country" d="M396,115 L428,118 L430,135 L412,142 L395,135 L390,122Z"/>
+    <!-- Germany/Benelux/Austria -->
+    <path class="country" d="M435,82 L468,80 L475,95 L465,108 L448,112 L435,100Z"/>
+    <!-- Italy -->
+    <path class="country" d="M442,112 L458,108 L465,125 L460,142 L448,148 L440,138 L438,120Z"/>
+    <!-- Poland/Czech/Slovakia -->
+    <path class="country" d="M468,80 L505,78 L512,92 L502,102 L475,100 L468,90Z"/>
+    <!-- Romania/Balkans -->
+    <path class="country" d="M475,100 L512,98 L518,115 L508,128 L488,130 L472,122 L470,108Z"/>
+    <!-- Greece -->
+    <path class="country" d="M478,130 L495,128 L498,142 L488,148 L478,142Z"/>
+    <!-- Baltic states -->
+    <path class="country" d="M468,62 L492,60 L495,72 L480,76 L468,72Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       AFRICA
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-af" class="region-btn" onclick="selectRegion('af')" fill="#BA7517">
+    <!-- North Africa (Maghreb + Egypt + Libya) -->
+    <path class="country" d="M395,148 L430,142 L465,148 L510,145 L538,155 L535,175 L505,178 L465,175 L430,178 L400,172 L390,160Z"/>
+    <!-- West Africa -->
+    <path class="country" d="M390,172 L430,178 L440,195 L428,215 L408,222 L390,215 L380,198Z"/>
+    <!-- Central Africa -->
+    <path class="country" d="M430,178 L505,178 L518,195 L515,218 L495,228 L465,230 L440,222 L428,205Z"/>
+    <!-- East Africa (Horn + Kenya + Tanzania) -->
+    <path class="country" d="M505,178 L538,175 L548,192 L545,215 L528,232 L510,238 L495,228 L510,208Z"/>
+    <!-- Southern Africa -->
+    <path class="country" d="M440,228 L515,228 L520,252 L505,275 L482,285 L460,278 L445,258Z"/>
+    <!-- Madagascar -->
+    <path class="country" d="M540,230 L550,225 L558,245 L552,262 L540,258 L535,242Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MIDDLE EAST
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-me" class="region-btn" onclick="selectRegion('me')" fill="#E24B4A">
+    <!-- Turkey -->
+    <path class="country" d="M500,118 L542,115 L558,125 L555,138 L530,142 L505,138 L498,128Z"/>
+    <!-- Syria/Iraq/Jordan/Israel -->
+    <path class="country" d="M530,138 L560,135 L572,148 L568,162 L548,168 L528,162 L522,148Z"/>
+    <!-- Saudi Arabia + Gulf states -->
+    <path class="country" d="M542,162 L582,158 L598,170 L595,195 L575,205 L548,200 L535,182 L538,168Z"/>
+    <!-- Iran -->
+    <path class="country" d="M568,130 L610,128 L622,142 L618,162 L595,168 L572,162 L562,148Z"/>
+    <!-- Yemen/Oman -->
+    <path class="country" d="M548,200 L595,195 L608,205 L600,218 L572,222 L548,212Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       ASIA
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-as" class="region-btn" onclick="selectRegion('as')" fill="#D85A30">
+    <!-- Russia (simplified western) -->
+    <path class="country" d="M510,30 L650,25 L720,35 L740,55 L720,70 L680,75 L640,70 L600,72 L565,68 L535,60 L515,48Z"/>
+    <!-- Russia (eastern) -->
+    <path class="country" d="M720,35 L820,28 L870,38 L875,58 L845,68 L800,72 L755,70 L725,62 L720,48Z"/>
+    <!-- Kazakhstan/Central Asia -->
+    <path class="country" d="M565,75 L650,72 L680,80 L678,100 L648,108 L608,105 L575,98 L560,88Z"/>
+    <!-- China -->
+    <path class="country" d="M648,80 L740,72 L775,85 L778,108 L758,128 L725,135 L692,132 L665,120 L648,105Z"/>
+    <!-- Mongolia -->
+    <path class="country" d="M680,72 L748,68 L768,80 L762,95 L738,100 L705,98 L682,88Z"/>
+    <!-- India subcontinent -->
+    <path class="country" d="M608,108 L648,105 L662,122 L658,148 L638,165 L618,168 L602,155 L598,132 L605,115Z"/>
+    <!-- Southeast Asia peninsula -->
+    <path class="country" d="M698,132 L730,130 L742,148 L735,168 L715,175 L698,162 L692,145Z"/>
+    <!-- Japan -->
+    <path class="country" d="M788,88 L800,82 L810,92 L806,108 L795,112 L785,102Z"/>
+    <!-- Indonesia/Malaysia (simplified) -->
+    <path class="country" d="M715,178 L760,172 L778,182 L772,195 L748,198 L718,192Z"/>
+    <path class="country" d="M762,182 L800,178 L812,188 L808,200 L782,202 L760,195Z"/>
+    <!-- Sri Lanka -->
+    <circle class="country" cx="638" cy="175" r="5"/>
+    <!-- Taiwan -->
+    <circle class="country" cx="768" cy="138" r="4"/>
+    <!-- Philippines -->
+    <path class="country" d="M762,148 L778,145 L782,160 L770,168 L758,162 L755,150Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       OCEANIA
+  ═══════════════════════════════════════════════════════ -->
+  <g id="r-oc" class="region-btn" onclick="selectRegion('oc')" fill="#1D9E75">
+    <!-- Australia -->
+    <path class="country" d="M750,252 L820,245 L858,255 L868,278 L858,305 L828,318 L795,318 L762,305 L748,282Z"/>
+    <!-- New Zealand north -->
+    <path class="country" d="M878,298 L892,292 L898,308 L888,318 L876,312Z"/>
+    <!-- New Zealand south -->
+    <path class="country" d="M875,322 L890,318 L894,338 L880,348 L868,338Z"/>
+    <!-- Papua New Guinea -->
+    <path class="country" d="M768,215 L808,210 L820,222 L812,235 L785,238 L765,228Z"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CONTINENT LABELS
+  ═══════════════════════════════════════════════════════ -->
+  <text class="continent-label" x="168" y="128" text-anchor="middle">N. AMERICA</text>
+  <text class="continent-label" x="252" y="290" text-anchor="middle">S. AMERICA</text>
+  <text class="continent-label" x="448" y="100" text-anchor="middle">EUROPE</text>
+  <text class="continent-label" x="462" y="210" text-anchor="middle">AFRICA</text>
+  <text class="continent-label" x="562" y="178" text-anchor="middle">MID EAST</text>
+  <text class="continent-label" x="710" y="95" text-anchor="middle">ASIA</text>
+  <text class="continent-label" x="808" y="285" text-anchor="middle">OCEANIA</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HOTSPOT PULSE DOTS (tension indicators)
+  ═══════════════════════════════════════════════════════ -->
+  <!-- Middle East hotspot -->
+  <g class="hotspot">
+    <circle cx="562" cy="165" r="5" fill="#E24B4A" opacity="0.9" style="animation:hpulse 2s ease-in-out infinite"/>
+    <circle cx="562" cy="165" r="5" fill="#E24B4A" opacity="0.9" style="animation:hpulse 2s ease-in-out infinite"/>
+  </g>
+  <!-- Asia hotspot -->
+  <g class="hotspot">
+    <circle cx="700" cy="115" r="5" fill="#D85A30" opacity="0.85" style="animation:hpulse 2.5s ease-in-out infinite"/>
+  </g>
+  <!-- Europe hotspot -->
+  <g class="hotspot">
+    <circle cx="490" cy="95" r="4" fill="#BA7517" opacity="0.8" style="animation:hpulse 3s ease-in-out infinite"/>
+  </g>
+</svg>
     </div>
     <div class="sidebar">
       <div class="gti-card">
@@ -421,8 +582,8 @@ function renderStocks(stocks) {
       <div class="stock-ticker">${s.ticker}</div>
       <div class="stock-name">${s.name}</div>
       <div class="price-row">
-        <div class="stock-price">₹${s.price.toLocaleString('en-IN')}</div>
-        <div class="stock-chg ${s.chg >= 0 ? 'chg-up':'chg-dn'}">${s.chg >= 0 ? '+':''}${s.chg}%</div>
+        <div class="stock-price">${s.price ? '₹'+s.price.toLocaleString('en-IN') : '—'}</div>
+        <div class="stock-chg ${s.chg >= 0 ? 'chg-up':'chg-dn'}">${s.chg !== null ? (s.chg >= 0 ? '+':'')+s.chg+'%' : ''}</div>
       </div>
       <div class="signal-bar-row"><span class="sbl">Momentum</span><div class="sbt"><div class="sbf" style="width:${s.momentum}%;background:#1D9E75"></div></div></div>
       <div class="signal-bar-row"><span class="sbl">Sentiment</span><div class="sbt"><div class="sbf" style="width:${s.sentiment}%;background:#185FA5"></div></div></div>
@@ -510,8 +671,11 @@ function selectTechnique(el, key) {
   el.classList.add('active');
 }
 
-// Init
+// Init — show stocks immediately with fallback, then overlay live prices
+STOCKS.forEach(s => { s.price = FALLBACK[s.ticker] || 1000; s.chg = 0; });
 selectRegion('na');
+filterStocks();
+selectStock('RELIANCE');
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
 </script>
